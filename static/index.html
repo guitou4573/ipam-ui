@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>IPam</title>
+  </head>
+  <body>
+    <div id="sectionlist">
+      <table>
+        <tr v-for="section in sections">
+          <td><input type="radio" :value="section.id" @change="loadsection($event)" v-model="selectedSection" />{{ section.id }}</td><td>{{ section.description }}</td>
+        </tr>
+      </table>
+      <span v-if="selectedSection">Section: {{ selectedSection }}</span>
+    </div>
+    <div id="vpclist">
+      <table>
+        <tr v-for="vpc in vpcs">
+          <td><input type="radio" :value="vpc.id" @change="loadvpc($event)" v-model="selectedVPC" />{{ vpc.id }}</td><td>{{ vpc.description }}</td>
+        </tr>
+      </table>
+      <span v-if="selectedVPC">VPC: {{ selectedVPC }}</span>
+    </div>
+    <div id="subnetlist">
+      <table>
+        <tr v-for="subnet in subnets">
+          <td><input type="radio" :value="subnet.netaddr" @change="loadSubnetDetails($event)" v-model="selectedSubnet" />{{ ntoa(subnet.netaddr) }}</td><td>{{ ntoa(subnet.mask) }}</td><td>{{ subnet.description }}</td>
+        </tr>
+      </table>
+      <span v-if="selectedSubnet">Subnet: {{ selectedSubnet }}</span>
+    </div>
+  </body>
+  <script type="text/javascript">
+    var sectionsApp = new Vue({
+      el: '#sectionlist',
+      data: {
+        sections: [],
+        selectedSection: null,
+      }
+    })
+    var vpcsApp = new Vue({
+      el: '#vpclist',
+      data: {
+        vpcs: [
+          { id: 'vpc-876d88sd', description: 'Learn JavaScript' },
+          { id: 'vpc-349234', description: 'Learn Vue' },
+          { id: 'vpc-2r4d88sb', description: 'Build something awesome' }
+        ],
+        selectedVPC: null
+      },
+      methods: {
+        loadvpc: function (event) {
+          axios.get('https://localhost:8000/v1/vpc/'+event.target.value+'/subnet', {})
+          .then(function (response) {
+            // console.log(response.data);
+            console.log(response.data.subnets)
+            subnetsApp.subnets = response.data.subnets
+          })
+          .catch(function (error) {
+            console.log(error);
+          })
+          .then(function () {
+            // always executed
+          });
+        }
+      }
+    })
+    var subnetsApp = new Vue({
+      el: '#subnetlist',
+      data: {
+        subnets: [
+        ],
+        selectedSubnet: null
+      },
+      methods: {
+        loadSubnetDetails: function (event) {
+          axios.get('https://localhost:8000/v1/vpc/'+vpcsApp.selectedVPC+'/subnet/'+event.target.value, {})
+          .then(function (response) {
+            console.log(response);
+          })
+          .catch(function (error) {
+            console.log(error);
+          })
+          .then(function () {
+            // always executed
+          });
+        }
+      }
+    })
+  </script>
+  <script type="text/javascript">
+    var networkMixin = {
+      methods: {
+        nota: function ( n ) {
+          var myN = n;
+          if ( myN < 0 ) {
+            myN = ((myN>>>1)*2) + (myN&1);
+          }
+          if ( myN < 0 || myN > 256*256*256*256 ) {
+            // alert( "Bad ntoa call with '" + myN + "'." );
+            return false;
+          }
+          return Math.floor(myN/256/256/256) + "." + Math.floor((myN/256/256)%256) + "." + Math.floor((myN/256)%256) + "." + Math.floor(myN%256);
+        }
+      }
+    }
+  </script>
+</html>
